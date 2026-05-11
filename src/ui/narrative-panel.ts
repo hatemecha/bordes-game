@@ -1,4 +1,6 @@
+import type { Timeline } from "animejs";
 import type { FlagSnapshot, PresentedNode } from "../narrative/types";
+import { cancelTypewriterTimeline, playPanelTypewriter } from "./typewriter";
 
 export type ChoiceHandler = (choiceId: string) => void;
 
@@ -40,6 +42,8 @@ export class NarrativePanel {
   private previousFlags: FlagSnapshot | null = null;
   private selectedChoiceIndex = 0;
   private statNotificationAnimationEnd: ((event: AnimationEvent) => void) | null = null;
+  private narrativeTypewriterTimeline: Timeline | null = null;
+  private narrativeTypingActive = false;
 
   constructor(parent: HTMLElement) {
     this.rootElement = parent;
@@ -91,9 +95,12 @@ export class NarrativePanel {
   }
 
   render(presentedNode: RenderablePresentedNode): void {
+    this.stopNarrativeTypewriter();
+
     const displayMode = presentedNode.displayMode ?? "story";
     const availableChoices = presentedNode.choices.filter((choice) => choice.isAvailable);
     const hasMultipleChoices = availableChoices.length > 1;
+    const useTypewriter = displayMode === "story" || displayMode === "ending";
     this.rootElement.className = [
       "narrative-ui",
       `narrative-ui--${displayMode}`,
@@ -116,33 +123,116 @@ export class NarrativePanel {
       .filter(Boolean)
       .join(" ");
     this.panelElement.dataset.nodeId = presentedNode.id;
-    this.titleElement.textContent = presentedNode.title;
-    this.bodyElement.replaceChildren(
-      ...presentedNode.lines.map((line) => {
-        const paragraph = document.createElement("p");
-        paragraph.textContent = line;
-        return paragraph;
-      }),
-    );
-    this.questionElement.textContent = presentedNode.question ?? "";
-    this.questionElement.hidden = !presentedNode.question;
+
+    if (useTypewriter) {
+      this.titleElement.textContent = "";
+      this.bodyElement.replaceChildren(
+        ...presentedNode.lines.map(() => {
+          const paragraph = document.createElement("p");
+          paragraph.textContent = "";
+          return paragraph;
+        }),
+      );
+      this.questionElement.textContent = presentedNode.question ? "" : "";
+      this.questionElement.hidden = !presentedNode.question;
+    } else {
+      this.titleElement.textContent = presentedNode.title;
+      this.bodyElement.replaceChildren(
+        ...presentedNode.lines.map((line) => {
+          const paragraph = document.createElement("p");
+          paragraph.textContent = line;
+          return paragraph;
+        }),
+      );
+      this.questionElement.textContent = presentedNode.question ?? "";
+      this.questionElement.hidden = !presentedNode.question;
+    }
+
     this.availableChoices = availableChoices;
     this.selectedChoiceIndex = 0;
-    this.renderChoices(presentedNode);
+    const choiceTypeSegments = this.renderChoices(presentedNode, useTypewriter);
     this.renderStats(presentedNode);
     this.renderStatNotification(presentedNode);
     this.updateSelectedChoice();
     this.rootElement.hidden = displayMode === "chapter";
+
+    if (!useTypewriter) {
+      return;
+    }
+
+    const sequential: Array<{ element: HTMLElement; text: string }> = [
+      { element: this.titleElement, text: presentedNode.title },
+      ...presentedNode.lines.map((line, index) => {
+        const paragraph = this.bodyElement.children[index];
+
+        if (!(paragraph instanceof HTMLParagraphElement)) {
+          throw new Error("Narrative body paragraph missing for typewriter.");
+        }
+
+        return { element: paragraph, text: line };
+      }),
+    ];
+
+    if (presentedNode.question) {
+      sequential.push({ element: this.questionElement, text: presentedNode.question });
+    }
+
+    this.narrativeTypingActive = true;
+
+    for (const segment of choiceTypeSegments) {
+      segment.element.disabled = true;
+    }
+
+    this.narrativeTypewriterTimeline = playPanelTypewriter({
+      sequential,
+      parallelAfter: choiceTypeSegments,
+      onComplete: () => {
+        this.narrativeTypewriterTimeline = null;
+        this.narrativeTypingActive = false;
+        this.applyChoiceAvailabilityToButtons(presentedNode);
+      },
+    });
   }
 
-  private renderChoices(presentedNode: RenderablePresentedNode): void {
+  private stopNarrativeTypewriter(): void {
+    cancelTypewriterTimeline(this.narrativeTypewriterTimeline);
+    this.narrativeTypewriterTimeline = null;
+    this.narrativeTypingActive = false;
+  }
+
+  private applyChoiceAvailabilityToButtons(presentedNode: RenderablePresentedNode): void {
+    for (const button of this.choicesElement.querySelectorAll<HTMLButtonElement>(
+      ".narrative-panel__choice",
+    )) {
+      const choiceId = button.dataset.choiceId;
+      const choice = presentedNode.choices.find((item) => item.id === choiceId);
+
+      if (choice) {
+        button.disabled = !choice.isAvailable;
+      }
+    }
+  }
+
+  private renderChoices(
+    presentedNode: RenderablePresentedNode,
+    deferAvailableLabels: boolean,
+  ): Array<{ element: HTMLButtonElement; text: string }> {
+    const choiceTypeSegments: Array<{ element: HTMLButtonElement; text: string }> = [];
+
     const choiceButtons = presentedNode.choices.map((choice) => {
       const button = document.createElement("button");
       button.className = "narrative-panel__choice";
       button.type = "button";
       button.disabled = !choice.isAvailable;
       button.dataset.choiceId = choice.id;
-      button.replaceChildren(document.createTextNode(choice.text));
+
+      if (deferAvailableLabels && choice.isAvailable) {
+        button.replaceChildren(document.createTextNode(""));
+        choiceTypeSegments.push({ element: button, text: choice.text });
+      } else {
+        button.replaceChildren(document.createTextNode(choice.text));
+      }
+
       button.addEventListener("click", () => this.handleChoiceClick(choice.id));
       button.addEventListener("mouseenter", () => this.selectChoiceById(choice.id));
       return button;
@@ -150,6 +240,7 @@ export class NarrativePanel {
 
     this.choicesElement.replaceChildren();
     this.choicesElement.append(...choiceButtons);
+    return choiceTypeSegments;
   }
 
   private renderStats(presentedNode: RenderablePresentedNode): void {
@@ -331,6 +422,21 @@ export class NarrativePanel {
       return;
     }
 
+    if (this.narrativeTypingActive) {
+      if (
+        event.key === "ArrowRight" ||
+        event.key === "ArrowDown" ||
+        event.key === "ArrowLeft" ||
+        event.key === "ArrowUp" ||
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+        event.preventDefault();
+      }
+
+      return;
+    }
+
     if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) {
       return;
     }
@@ -365,6 +471,10 @@ export class NarrativePanel {
   }
 
   private handleChoiceClick(choiceId: string): void {
+    if (this.narrativeTypingActive) {
+      return;
+    }
+
     const isCurrentAvailableChoice = this.availableChoices.some((choice) => choice.id === choiceId);
 
     if (!isCurrentAvailableChoice) {
@@ -375,6 +485,10 @@ export class NarrativePanel {
   }
 
   private selectChoiceById(choiceId: string): void {
+    if (this.narrativeTypingActive) {
+      return;
+    }
+
     const nextIndex = this.availableChoices.findIndex((choice) => choice.id === choiceId);
 
     if (nextIndex === -1) {

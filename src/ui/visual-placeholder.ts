@@ -1,11 +1,16 @@
+import type { Timeline } from "animejs";
 import type { PresentedNode, StoryDisplayMode } from "../narrative/types";
+import { cancelTypewriterTimeline, playSingleTypewriter } from "./typewriter";
 
 export class VisualPlaceholder {
   private chapterDramaGeneration = 0;
+  private placeholderTypewriterTimeline: Timeline | null = null;
 
   constructor(private readonly parent: HTMLElement) {}
 
   render(presentedNode: PresentedNode): void {
+    cancelTypewriterTimeline(this.placeholderTypewriterTimeline);
+    this.placeholderTypewriterTimeline = null;
     this.chapterDramaGeneration += 1;
     this.parent.classList.remove("visual-placeholder--chapter-drama");
 
@@ -29,7 +34,20 @@ export class VisualPlaceholder {
       return;
     }
 
-    this.parent.textContent = text;
+    if (displayMode === "title") {
+      this.parent.textContent = text;
+      return;
+    }
+
+    const span = document.createElement("span");
+    span.className = "visual-placeholder__typed-text";
+    this.parent.append(span);
+
+    if (text.length === 0) {
+      return;
+    }
+
+    this.placeholderTypewriterTimeline = playSingleTypewriter(span, text);
   }
 
   playChapterDrama(): Promise<void> {
