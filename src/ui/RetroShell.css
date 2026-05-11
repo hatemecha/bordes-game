@@ -1,13 +1,19 @@
 .retro-shell {
-  --border-color: #ffffff;
-  --panel-border-width: 3px;
-  --panel-bg: #000000;
-  --panel-bg-deep: #000000;
-  --text-main: #ffffff;
-  --text-muted: #ffffff;
-  --accent: #ffffff;
-  --accent-hot: #ffffff;
-  --focus: #ffffff;
+  --border-color: var(--border);
+  --panel-border-width: 2px;
+  --panel-bg: var(--surface);
+  --panel-bg-deep: var(--bg);
+  --text-main: var(--fg);
+  --text-muted: var(--muted);
+  --accent-hot: var(--accent);
+  --focus: var(--fg);
+  --hud-bottom: clamp(20px, 4.2dvh, 44px);
+  --hud-gap: clamp(14px, 1.4vw, 22px);
+  --hud-width: min(calc(100vw - 64px), 1260px);
+  --hud-left: calc((100vw - var(--hud-width)) / 2);
+  --panel-height: clamp(232px, 30dvh, 276px);
+  --hud-row-top: calc(100dvh - var(--hud-bottom) - var(--panel-height));
+  --stats-width: clamp(270px, 24vw, 340px);
 
   position: relative;
   display: block;
@@ -26,8 +32,8 @@
   background:
     repeating-linear-gradient(
       to bottom,
-      rgb(255 255 255 / 0.025) 0,
-      rgb(255 255 255 / 0.025) 1px,
+      rgb(255 255 255 / 0.022) 0,
+      rgb(255 255 255 / 0.022) 1px,
       transparent 1px,
       transparent 4px
     );
@@ -60,22 +66,24 @@
 
 .visual-placeholder {
   position: absolute;
-  top: clamp(70px, 12dvh, 130px);
+  top: clamp(42px, 7.5dvh, 86px);
   left: 50%;
   z-index: 3;
   display: grid;
-  width: min(86vw, 1080px);
-  min-height: clamp(126px, 27dvh, 260px);
-  padding: clamp(18px, 3vw, 42px);
+  width: var(--hud-width);
+  min-height: clamp(150px, 31dvh, 292px);
+  max-height: calc(100dvh - var(--hud-bottom) - var(--panel-height) - clamp(118px, 18dvh, 180px));
+  padding: clamp(20px, 3vw, 44px);
   place-items: center;
   color: var(--text-main);
-  font-family: "IBM Plex Mono", "Courier New", monospace;
-  font-size: clamp(0.9rem, 1.55vw, 1.45rem);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
   line-height: 1.55;
   text-align: center;
   white-space: pre-line;
   overflow-wrap: anywhere;
-  background: rgb(0 0 0 / 0.78);
+  overflow: hidden;
+  background: rgb(0 0 0 / 0.84);
   border: var(--panel-border-width, 3px) solid var(--border-color);
   transform: translateX(-50%);
 }
@@ -90,18 +98,18 @@
   width: min(84vw, 920px);
   min-height: 0;
   padding: 0;
-  font-family: "Silkscreen", "Courier New", monospace;
+  font-family: var(--font-game);
   line-height: 1.1;
   background: transparent;
   border: 0;
 }
 
 .visual-placeholder--title {
-  font-size: clamp(3rem, 8vw, 5.8rem);
+  font-size: 5.2rem;
 }
 
 .visual-placeholder--chapter {
-  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-size: 2.6rem;
 }
 
 .narrative-ui {
@@ -113,27 +121,44 @@
 
 .narrative-slot {
   position: absolute;
-  left: 50%;
-  bottom: clamp(18px, 5dvh, 46px);
+  left: var(--hud-left);
+  top: var(--hud-row-top);
   z-index: 6;
-  width: min(88vw, 1080px);
+  width: calc(var(--hud-width) - var(--stats-width) - var(--hud-gap));
   min-width: min(92vw, 320px);
-  min-height: clamp(176px, 24dvh, 230px);
-  transform: translateX(-50%);
+  height: var(--panel-height);
+  min-height: 0;
+  transform: none;
   pointer-events: auto;
 }
 
 .narrative-slot--title,
 .narrative-slot--chapter {
+  top: auto;
+  left: 50%;
+  bottom: var(--hud-bottom);
   width: min(72vw, 760px);
+  height: auto;
+  min-height: 88px;
+  transform: translateX(-50%);
 }
 
-@media (width <= 720px) {
+@media (width <= 820px) {
+  .retro-shell {
+    --hud-bottom: 12px;
+    --hud-gap: 10px;
+    --hud-width: calc(100vw - 24px);
+    --hud-left: 12px;
+    --panel-height: clamp(214px, 34dvh, 286px);
+    --stats-width: var(--hud-width);
+  }
+
   .visual-placeholder {
-    top: 54px;
-    width: calc(100vw - 28px);
-    min-height: 128px;
-    padding: 16px;
+    top: 14px;
+    width: var(--hud-width);
+    min-height: clamp(106px, 22dvh, 168px);
+    max-height: calc(100dvh - var(--hud-bottom) - var(--panel-height) - 146px);
+    padding: 14px;
     font-size: 0.82rem;
   }
 
@@ -142,9 +167,28 @@
     top: 30dvh;
   }
 
+  .visual-placeholder--title {
+    font-size: 3rem;
+  }
+
+  .visual-placeholder--chapter {
+    font-size: 1.8rem;
+  }
+
   .narrative-slot {
-    bottom: 18px;
-    width: calc(100vw - 28px);
-    min-height: 210px;
+    left: var(--hud-left);
+    top: auto;
+    bottom: var(--hud-bottom);
+    width: var(--hud-width);
+    height: var(--panel-height);
+    min-height: 0;
+  }
+
+  .narrative-slot--title,
+  .narrative-slot--chapter {
+    left: 50%;
+    width: min(84vw, 760px);
+    height: auto;
+    min-height: 88px;
   }
 }

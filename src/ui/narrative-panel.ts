@@ -170,40 +170,64 @@ export class NarrativePanel {
         return [];
       }
 
+      const clampedValue = this.getClampedStatValue(rawValue);
       const statElement = document.createElement("div");
       statElement.className = "narrative-panel__stat";
-      statElement.dataset.state = this.getStatState(rawValue);
+      statElement.dataset.state = this.getStatState(clampedValue);
 
       const statHeader = document.createElement("div");
       statHeader.className = "narrative-panel__stat-header";
 
       const statLabel = document.createElement("span");
       statLabel.className = "narrative-panel__stat-label";
-      statLabel.textContent = statDefinition.label;
+      statLabel.textContent = `${statDefinition.lowLabel} / ${statDefinition.highLabel}`;
 
       const statValue = document.createElement("span");
       statValue.className = "narrative-panel__stat-value";
-      statValue.textContent = `${rawValue}`;
+      statValue.textContent = `${clampedValue}/${STAT_MAXIMUM}`;
 
       const statTrack = document.createElement("div");
       statTrack.className = "narrative-panel__stat-track";
       statTrack.setAttribute(
         "aria-label",
-        `${statDefinition.lowLabel} ${STAT_MINIMUM}, neutral ${STAT_NEUTRAL}, ${statDefinition.highLabel} ${STAT_MAXIMUM}. Valor actual ${rawValue}.`,
+        `${statDefinition.lowLabel} ${STAT_MINIMUM}, neutral ${STAT_NEUTRAL}, ${statDefinition.highLabel} ${STAT_MAXIMUM}. Valor actual ${clampedValue}.`,
       );
 
       const statFill = document.createElement("div");
       statFill.className = "narrative-panel__stat-fill";
-      statFill.style.width = `${this.getStatFillPercentage(rawValue)}%`;
+      statFill.style.width = `${this.getStatFillPercentage(clampedValue)}%`;
+
+      const statRange = document.createElement("div");
+      statRange.className = "narrative-panel__stat-range";
+
+      const statLowLabel = document.createElement("span");
+      statLowLabel.className = "narrative-panel__stat-low";
+      statLowLabel.textContent = statDefinition.lowLabel;
+
+      const statHighLabel = document.createElement("span");
+      statHighLabel.className = "narrative-panel__stat-high";
+      statHighLabel.textContent = statDefinition.highLabel;
 
       statHeader.append(statLabel, statValue);
       statTrack.append(statFill);
-      statElement.append(statHeader, statTrack);
+      statRange.append(statLowLabel, statHighLabel);
+      statElement.append(statHeader, statTrack, statRange);
       return [statElement];
     });
 
     this.statsElement.hidden = statElements.length === 0;
-    this.statsElement.replaceChildren(...statElements);
+    const statsHeading = document.createElement("div");
+    statsHeading.className = "narrative-panel__stats-heading";
+
+    const statsTitle = document.createElement("span");
+    statsTitle.textContent = "ESTADO";
+
+    const statsScale = document.createElement("span");
+    statsScale.className = "narrative-panel__stats-scale";
+    statsScale.textContent = `${STAT_MINIMUM}-${STAT_MAXIMUM}`;
+
+    statsHeading.append(statsTitle, statsScale);
+    this.statsElement.replaceChildren(statsHeading, ...statElements);
   }
 
   private renderStatNotification(presentedNode: RenderablePresentedNode): void {
@@ -341,8 +365,12 @@ export class NarrativePanel {
     return "neutral";
   }
 
+  private getClampedStatValue(value: number): number {
+    return Math.min(STAT_MAXIMUM, Math.max(STAT_MINIMUM, value));
+  }
+
   private getStatFillPercentage(value: number): number {
-    const clampedValue = Math.min(STAT_MAXIMUM, Math.max(STAT_MINIMUM, value));
+    const clampedValue = this.getClampedStatValue(value);
     return (clampedValue / STAT_MAXIMUM) * 100;
   }
 }

@@ -1,11 +1,22 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Silkscreen:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Silkscreen:wght@400;700&display=swap");
 @import "../ui/RetroShell.css";
 @import "../ui/narrative-panel.css";
 
 :root {
-  font-family: "Silkscreen", "Courier New", monospace;
-  color: #ffffff;
-  background: #000000;
+  --bg: oklch(0% 0 0);
+  --surface: oklch(0% 0 0);
+  --fg: oklch(100% 0 0);
+  --muted: oklch(74% 0 0);
+  --border: oklch(100% 0 0);
+  --accent: oklch(100% 0 0);
+
+  --font-display: "Times New Roman", "Iowan Old Style", Georgia, serif;
+  --font-body: "IBM Plex Mono", "Courier New", ui-monospace, Menlo, monospace;
+  --font-game: "Silkscreen", "IBM Plex Mono", "Courier New", monospace;
+
+  font-family: var(--font-body);
+  color: var(--fg);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: none;

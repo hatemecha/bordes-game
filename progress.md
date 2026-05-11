@@ -1,5 +1,3 @@
-Original prompt: realizar el plan de [phaser_horror_narrative_scaffold_537a543b.plan.md](.cursor/plans/phaser_horror_narrative_scaffold_537a543b.plan.md)
-
 ## Progress
 
 - Started scaffold from the Cursor plan: empty repo, Vite + TypeScript + Phaser horror narrative shell.
@@ -71,9 +69,25 @@ Original prompt: realizar el plan de [phaser_horror_narrative_scaffold_537a543b.
   - stat-change notifications appear above the stats panel.
   - verified at 1586x916 on `alarm_0700`: stats and notifications are visible, do not depend on the dialogue box, and no errors are emitted.
   - verified `work_minigame_intro`: stats remain visible even with no options.
+- Follow-up high-fidelity visual alignment pass:
+  - bound the UI to a strict black/white brutalist token set with shared font variables.
+  - changed the bottom HUD to a single measured band: dialogue panel on the left, stats panel on the right, both sharing baseline, height, gap, and viewport margins.
+  - changed mobile layout so stats stack above the dialogue panel instead of using desktop absolute offsets.
+  - removed red/green stat colors for now; stat bars are monochrome and keep a neutral center marker for the 1-10 opposed axes.
+  - updated the stats markup to show `ESTADO`, the 1-10 scale, and paired labels such as `Cansancio / Energía`.
+  - verified TypeScript with `npx tsc --noEmit`.
+  - `npm run build` and the Playwright screenshot client were blocked by sandbox `spawn EPERM`, so visual screenshot verification still needs a local browser pass.
+- Follow-up container alignment correction after user screenshot:
+  - changed the lower HUD from content-driven minimum heights to a fixed shared row: `--hud-row-top` + `--panel-height`.
+  - dialogue and stats now share the same top, bottom, height, outer margins, and inter-panel gap on desktop.
+  - the scene placeholder now uses the same `--hud-width` as the combined lower HUD so the top and bottom containers align horizontally.
+  - title/chapter modes keep their compact centered control box overrides.
+  - verified `npx tsc --noEmit` and `git diff --check`.
+  - `npm run build`, Playwright screenshot capture, and the in-session browser were still blocked/cancelled by the environment (`spawn EPERM` / cancelled navigation), so final pixel verification should be done in the local browser at `http://127.0.0.1:5174/`.
 
 ## TODO
 
 - Future content work: replace generated placeholder frames with real assets under `public/assets/`.
 - Future systems work: add persistence, real ending rules, and minigame scene registry when story/combat scope is defined.
 - Future content work: replace the home/work/final placeholder descriptions with final art assets and scene-specific animations.
+- Verification TODO: open `http://127.0.0.1:5174/` locally and inspect `alarm_0600`, `alarm_0700`, `work_minigame_intro`, and `ending_unemployed` at desktop and mobile widths. Confirm the top scene placeholder and the combined lower HUD share the same left/right edge, and that dialogue/stats share the same top/bottom edge on desktop.
