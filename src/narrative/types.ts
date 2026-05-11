@@ -47,6 +47,9 @@ export type StoryNode = {
   lines: string[];
   question?: string;
   visualPlaceholder?: string;
+  /** Public URL (e.g. `/story/bedroom-dawn-6am.png`) shown in the visual area instead of placeholder text. */
+  visualImage?: string;
+  visualImageAlt?: string;
   displayMode?: StoryDisplayMode;
   showStats?: boolean;
   cinematic?: CinematicDefinition;

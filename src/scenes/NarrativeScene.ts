@@ -94,6 +94,7 @@ export class NarrativeScene extends Phaser.Scene {
       story: this.storyRunner.getSnapshot(),
       cinematic: this.frameSequencePlayer.getState(),
       visiblePlaceholder: this.currentNode.visualPlaceholder ?? null,
+      visibleImage: this.currentNode.visualImage ?? null,
       visibleChoices: this.currentNode.choices.map((choice) => ({
         id: choice.id,
         text: choice.text,

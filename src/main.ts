@@ -19,6 +19,15 @@ const game = createGame(cinematicElement);
 game.events.on("story:presented", (presentedNode: PresentedNode) => {
   visualPlaceholder.render(presentedNode);
   narrativePanel.render(presentedNode);
+
+  if (presentedNode.displayMode === "chapter") {
+    void visualPlaceholder.playChapterDrama().then(() => {
+      const onlyAvailable = presentedNode.choices.filter((choice) => choice.isAvailable);
+      if (onlyAvailable.length === 1) {
+        window.chooseStoryChoice?.(onlyAvailable[0].id);
+      }
+    });
+  }
 });
 
 narrativePanel.onChoice((choiceId) => {

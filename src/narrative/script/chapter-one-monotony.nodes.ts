@@ -74,9 +74,9 @@ export const chapterOneNodes: StoryNode[] = [
     title: "6:00 AM - Suena la alarma",
     lines: ["Son las 6:00 AM. La alarma empieza a sonar."],
     question: "¿Despertar?",
-    visualPlaceholder: homePlaceholder(
-      "Dormitorio al amanecer. Un reloj o teléfono vibra sobre la mesa de luz mientras la casa sigue en silencio.",
-    ),
+    visualImage: "/story/bedroom-dawn-6am.png",
+    visualImageAlt:
+      "Dormitorio al amanecer: una mano sostiene un teléfono con la alarma a las 6:00 AM en una habitación oscura.",
     choices: [
       {
         id: "wake_at_0600",

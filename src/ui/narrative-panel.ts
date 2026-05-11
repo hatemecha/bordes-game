@@ -39,6 +39,7 @@ export class NarrativePanel {
   private choiceHandler: ChoiceHandler | null = null;
   private previousFlags: FlagSnapshot | null = null;
   private selectedChoiceIndex = 0;
+  private statNotificationAnimationEnd: ((event: AnimationEvent) => void) | null = null;
 
   constructor(parent: HTMLElement) {
     this.rootElement = parent;
@@ -131,6 +132,7 @@ export class NarrativePanel {
     this.renderStats(presentedNode);
     this.renderStatNotification(presentedNode);
     this.updateSelectedChoice();
+    this.rootElement.hidden = displayMode === "chapter";
   }
 
   private renderChoices(presentedNode: RenderablePresentedNode): void {
@@ -237,8 +239,7 @@ export class NarrativePanel {
     const currentFlags = presentedNode.flags ?? {};
 
     if (!shouldShowStats) {
-      this.notificationElement.replaceChildren();
-      this.notificationElement.hidden = true;
+      this.teardownStatNotificationAnimation(true);
       this.previousFlags = { ...currentFlags };
       return;
     }
@@ -267,28 +268,69 @@ export class NarrativePanel {
     this.previousFlags = { ...currentFlags };
 
     if (changedStats.length === 0) {
-      this.notificationElement.replaceChildren();
-      this.notificationElement.hidden = true;
+      this.teardownStatNotificationAnimation(true);
       return;
     }
 
+    this.teardownStatNotificationAnimation(false);
+
     this.notificationElement.hidden = false;
     this.notificationElement.replaceChildren(...changedStats);
-    this.notificationElement.animate(
-      [
-        { opacity: 0, transform: "translateY(10px)" },
-        { opacity: 1, transform: "translateY(0)" },
-        { opacity: 1, transform: "translateY(0)", offset: 0.72 },
-        { opacity: 0, transform: "translateY(-8px)" },
-      ],
-      {
-        duration: 1900,
-        easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-      },
-    );
+
+    for (let index = 0; index < changedStats.length; index += 1) {
+      const chip = changedStats[index];
+      chip.style.setProperty("--chip-index", String(index));
+    }
+
+    let pendingEnds = changedStats.length;
+    this.statNotificationAnimationEnd = (event: AnimationEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || !target.classList.contains("stat-notification__chip")) {
+        return;
+      }
+
+      pendingEnds -= 1;
+
+      if (pendingEnds > 0) {
+        return;
+      }
+
+      if (this.statNotificationAnimationEnd) {
+        this.notificationElement.removeEventListener("animationend", this.statNotificationAnimationEnd);
+        this.statNotificationAnimationEnd = null;
+      }
+
+      this.notificationElement.classList.remove("stat-notification--playing");
+      this.notificationElement.replaceChildren();
+      this.notificationElement.hidden = true;
+    };
+
+    this.notificationElement.addEventListener("animationend", this.statNotificationAnimationEnd);
+
+    requestAnimationFrame(() => {
+      this.notificationElement.classList.add("stat-notification--playing");
+    });
+  }
+
+  private teardownStatNotificationAnimation(resetDom: boolean): void {
+    if (this.statNotificationAnimationEnd) {
+      this.notificationElement.removeEventListener("animationend", this.statNotificationAnimationEnd);
+      this.statNotificationAnimationEnd = null;
+    }
+
+    this.notificationElement.classList.remove("stat-notification--playing");
+
+    if (resetDom) {
+      this.notificationElement.replaceChildren();
+      this.notificationElement.hidden = true;
+    }
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
+    if (this.rootElement.hidden) {
+      return;
+    }
+
     if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) {
       return;
     }

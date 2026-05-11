@@ -92,24 +92,99 @@
   display: none;
 }
 
-.visual-placeholder--title,
-.visual-placeholder--chapter {
+.visual-placeholder--title {
   top: 34dvh;
+  left: 50%;
   width: min(84vw, 920px);
   min-height: 0;
+  max-height: none;
   padding: 0;
+  transform: translateX(-50%);
   font-family: var(--font-game);
+  font-size: 5.2rem;
   line-height: 1.1;
   background: transparent;
   border: 0;
 }
 
-.visual-placeholder--title {
-  font-size: 5.2rem;
+.visual-placeholder--chapter {
+  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  min-height: 0;
+  padding: clamp(20px, 4vw, 48px);
+  transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-game);
+  font-size: clamp(1.85rem, 5.2vw, 3rem);
+  line-height: 1.12;
+  text-align: center;
+  background: #000000;
+  border: 0;
+  z-index: 8;
 }
 
-.visual-placeholder--chapter {
-  font-size: 2.6rem;
+.visual-placeholder__chapter-text {
+  display: block;
+  max-width: min(92vw, 960px);
+}
+
+@keyframes visual-chapter-drama {
+  0% {
+    opacity: 0;
+    filter: blur(10px);
+    transform: scale(0.96);
+  }
+
+  16% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+
+  56% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(1.02);
+  }
+}
+
+.visual-placeholder--chapter.visual-placeholder--chapter-drama {
+  animation: visual-chapter-drama 3.1s cubic-bezier(0.37, 0.03, 0.22, 1) forwards;
+}
+
+/* Story art: fill everything above the bottom HUD row; image fills frame (cover) */
+.visual-placeholder.visual-placeholder--story.visual-placeholder--has-image {
+  top: clamp(10px, 2dvh, 32px);
+  bottom: calc(var(--hud-bottom) + var(--panel-height) + clamp(6px, 1dvh, 12px));
+  display: grid;
+  place-items: stretch;
+  min-height: 0;
+  max-height: none;
+  padding: 0;
+}
+
+.visual-placeholder--has-image .visual-placeholder__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  object-fit: cover;
+  object-position: center;
+  image-rendering: auto;
 }
 
 .narrative-ui {
@@ -143,6 +218,10 @@
   transform: translateX(-50%);
 }
 
+.narrative-slot--title {
+  min-height: 0;
+}
+
 @media (width <= 820px) {
   .retro-shell {
     --hud-bottom: 12px;
@@ -162,17 +241,19 @@
     font-size: 0.82rem;
   }
 
-  .visual-placeholder--title,
-  .visual-placeholder--chapter {
-    top: 30dvh;
-  }
-
   .visual-placeholder--title {
+    top: 28dvh;
     font-size: 3rem;
   }
 
   .visual-placeholder--chapter {
-    font-size: 1.8rem;
+    font-size: clamp(1.35rem, 6.5vw, 2.1rem);
+  }
+
+  .visual-placeholder.visual-placeholder--story.visual-placeholder--has-image {
+    top: 8px;
+    bottom: calc(var(--hud-bottom) + var(--panel-height) + 8px);
+    padding: 0;
   }
 
   .narrative-slot {
@@ -190,5 +271,9 @@
     width: min(84vw, 760px);
     height: auto;
     min-height: 88px;
+  }
+
+  .narrative-slot--title {
+    min-height: 0;
   }
 }
