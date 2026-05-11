@@ -1,0 +1,79 @@
+Original prompt: realizar el plan de [phaser_horror_narrative_scaffold_537a543b.plan.md](.cursor/plans/phaser_horror_narrative_scaffold_537a543b.plan.md)
+
+## Progress
+
+- Started scaffold from the Cursor plan: empty repo, Vite + TypeScript + Phaser horror narrative shell.
+- Added project config, retro shell CSS, narrative panel, StoryRunner/FlagStore, sample nodes, Phaser scenes, and FrameSequencePlayer.
+- Installed dependencies and confirmed `npm run build` passes.
+- Fixed placeholder still texture key collisions and enabled `preserveDrawingBuffer` so automated canvas screenshots are nonblank.
+- Verified both demo branches with the develop-web-game Playwright client:
+  - first choice reaches `marked`, sets `touchedDoor: true`, and completes the non-looping `door_mark` sequence.
+  - second choice reaches `listening`, sets `dread: 1`, and shows `listen_still`.
+- Verified full 70/30 layout screenshot with local Playwright browser; console is clean except Phaser's normal startup log.
+- Added verification artifacts to `.gitignore` and removed an unused Vite SSL plugin dependency.
+- Correction after user feedback: removed invented story content, choices, flags, red/yellow palette, and narrative-specific placeholder scenes. Current scaffold uses one neutral placeholder node with no choices and a black/white placeholder sequence only.
+- Updated layout approach: canvas now occupies the full responsive viewport, and the narrative/stat placeholder container is an overlaid black/white dialogue box near the bottom, FAITH-inspired, with no new content added.
+- Updated visual placeholder to use `EXAMPLE.png` as the full-screen background, simplified the dialogue container to one minimal Undertale-style border, and added only placeholder options `SI` and `NO`.
+- Replaced the neutral placeholder loop with Chapter 1 content:
+  - title screen `BORDES` with only `Iniciar juego`.
+  - chapter splash `I. MONOTONIA.`.
+  - home alarm/breakfast branch for 6:00, 7:00, and 8:00 decisions.
+  - early unemployed ending with restart.
+- Added bounded numeric story-variable effects for `cansancio_energia` and `ansiedad_tranquilidad`, including visible effect notices and compact stat readout during story nodes.
+- Switched the visual layer from the `EXAMPLE.png` background to centered text placeholders rendered in Phaser until real scene images are available.
+- Added keyboard menu support for testability and accessibility: Enter/Space confirms, arrows switch selected choices.
+- Fixed a runtime import-cycle issue caused by top-level `GAME_WIDTH`/`GAME_HEIGHT` derived constants in `NarrativeScene`.
+- Verified with `npm run build` and the develop-web-game Playwright client:
+  - early route reaches `arrive_work_early` with `cansancio_energia: 6`, `ansiedad_tranquilidad: 6`.
+  - on-time route reaches `arrive_work_on_time` with `cansancio_energia: 7`, `ansiedad_tranquilidad: 4`.
+  - late route reaches `boss_late_question` with `cansancio_energia: 6`, `ansiedad_tranquilidad: 2`.
+  - no-wake route reaches `ending_unemployed` with `cansancio_energia: 7`, `ansiedad_tranquilidad: 3`.
+  - restart from `ending_unemployed` returns to `title_screen` and resets both variables to 5.
+- Captured and visually inspected full-page screenshots for title, chapter splash, and `alarm_0600`; adjusted the placeholder frame so it no longer overlaps the bottom panel.
+- Follow-up fix after user screenshot:
+  - moved visual placeholder text out of Phaser canvas and into a stable HTML overlay to remove the striped render artifact.
+  - changed alarm choices from generic `Sí/No` to explicit `Despertarme` / `Quedarme dormido`.
+  - changed breakfast choices to `Desayunar` / `No desayunar`.
+  - made choice rendering rebuild buttons from scratch on every presented node.
+  - verified the 1920x910 alarm view shows both wake/sleep options and no placeholder artifact.
+  - reran early and unemployed ending paths with the develop-web-game Playwright client; both states are correct and console errors are clean.
+- Follow-up guard after user console report:
+  - `NarrativePanel.renderStats` now handles missing `flags` defensively instead of throwing.
+  - choices are rendered before stats so stale buttons cannot remain if a secondary UI block fails later.
+  - clicks are ignored unless the clicked id is still part of the current available choices.
+  - `NarrativeScene.choose` catches stale/invalid choice ids, logs a warning, and re-emits the current node to repaint the UI.
+  - verified `alarm_0600` at 1920x910 again: choices are `Despertarme` and `Quedarme dormido`, with no errors or warnings.
+  - reran the early path with the develop-web-game Playwright client; it reaches `arrive_work_early` with both variables at 6 and no error artifacts.
+- Follow-up fix after user reported `Unsupported story effect`:
+  - changed chapter 1 axis effects from `adjustNumberFlag` to the pre-existing `incrementFlag` effect to avoid stale runner/HMR incompatibility.
+  - moved personal stats into the footer next to the choice container.
+  - changed stats into 1-10 bars: red below neutral, white at neutral, green above neutral.
+  - verified wake path advances to `breakfast_early` with `ansiedad_tranquilidad: 6` and a green tranquility bar.
+  - verified sleep path advances to `alarm_0700` with `cansancio_energia: 6` green and `ansiedad_tranquilidad: 4` red.
+  - reran early and unemployed ending paths with the develop-web-game Playwright client; both finish with expected variables and no error artifacts.
+- Follow-up layout adjustment after user clarified stats placement:
+  - moved stat bars out of the narrative/options panel into a separate sidecar box next to it.
+  - `narrative-slot` now uses two desktop columns: stats sidecar on the left and the narrative/options panel on the right.
+  - verified at 1920x910 that stats are visibly beside the options container, with energy green at 6 and tranquility red at 4.
+- Follow-up visual-novel layout correction after user screenshot:
+  - changed bottom HUD to a visual-novel composition: large narrative/options panel on the left and persistent stats panel on the right.
+  - stats no longer disappear or cause the narrative panel to shrink on no-choice nodes such as `work_minigame_intro`.
+  - moved stat-change feedback out of the dialogue text into animated toast chips above the HUD.
+  - removed inline effect text from the dialogue panel; stat deltas are computed from previous/current flags.
+  - verified `alarm_0700` at 1586x916: wide panel, visible stats, and `Energía +1` / `Tranquilidad -1` toast.
+  - verified `work_minigame_intro` at 1586x916: wide panel remains, stats panel remains visible.
+  - reran early and unemployed ending routes with develop-web-game Playwright client; both states remain correct and no error artifacts were produced.
+- Follow-up Undertale-style HUD correction:
+  - decoupled stats and stat notifications from the dialogue layout entirely.
+  - `#narrative-ui` is now a full-screen HUD layer.
+  - dialogue box is fixed wide at the bottom.
+  - stats panel is fixed between the scene placeholder and the dialogue box, on the right.
+  - stat-change notifications appear above the stats panel.
+  - verified at 1586x916 on `alarm_0700`: stats and notifications are visible, do not depend on the dialogue box, and no errors are emitted.
+  - verified `work_minigame_intro`: stats remain visible even with no options.
+
+## TODO
+
+- Future content work: replace generated placeholder frames with real assets under `public/assets/`.
+- Future systems work: add persistence, real ending rules, and minigame scene registry when story/combat scope is defined.
+- Future content work: replace the home/work/final placeholder descriptions with final art assets and scene-specific animations.

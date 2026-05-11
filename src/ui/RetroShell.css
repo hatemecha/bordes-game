@@ -1,0 +1,150 @@
+.retro-shell {
+  --border-color: #ffffff;
+  --panel-border-width: 3px;
+  --panel-bg: #000000;
+  --panel-bg-deep: #000000;
+  --text-main: #ffffff;
+  --text-muted: #ffffff;
+  --accent: #ffffff;
+  --accent-hot: #ffffff;
+  --focus: #ffffff;
+
+  position: relative;
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--panel-bg-deep);
+}
+
+.retro-shell::before {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  content: "";
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.025) 0,
+      rgb(255 255 255 / 0.025) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  mix-blend-mode: screen;
+}
+
+.cinematic-slot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  padding: 0;
+  overflow: hidden;
+  background: #000000;
+}
+
+.cinematic-slot canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 0;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.visual-placeholder {
+  position: absolute;
+  top: clamp(70px, 12dvh, 130px);
+  left: 50%;
+  z-index: 3;
+  display: grid;
+  width: min(86vw, 1080px);
+  min-height: clamp(126px, 27dvh, 260px);
+  padding: clamp(18px, 3vw, 42px);
+  place-items: center;
+  color: var(--text-main);
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: clamp(0.9rem, 1.55vw, 1.45rem);
+  line-height: 1.55;
+  text-align: center;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  background: rgb(0 0 0 / 0.78);
+  border: var(--panel-border-width, 3px) solid var(--border-color);
+  transform: translateX(-50%);
+}
+
+.visual-placeholder[hidden] {
+  display: none;
+}
+
+.visual-placeholder--title,
+.visual-placeholder--chapter {
+  top: 34dvh;
+  width: min(84vw, 920px);
+  min-height: 0;
+  padding: 0;
+  font-family: "Silkscreen", "Courier New", monospace;
+  line-height: 1.1;
+  background: transparent;
+  border: 0;
+}
+
+.visual-placeholder--title {
+  font-size: clamp(3rem, 8vw, 5.8rem);
+}
+
+.visual-placeholder--chapter {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.narrative-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.narrative-slot {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(18px, 5dvh, 46px);
+  z-index: 6;
+  width: min(88vw, 1080px);
+  min-width: min(92vw, 320px);
+  min-height: clamp(176px, 24dvh, 230px);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.narrative-slot--title,
+.narrative-slot--chapter {
+  width: min(72vw, 760px);
+}
+
+@media (width <= 720px) {
+  .visual-placeholder {
+    top: 54px;
+    width: calc(100vw - 28px);
+    min-height: 128px;
+    padding: 16px;
+    font-size: 0.82rem;
+  }
+
+  .visual-placeholder--title,
+  .visual-placeholder--chapter {
+    top: 30dvh;
+  }
+
+  .narrative-slot {
+    bottom: 18px;
+    width: calc(100vw - 28px);
+    min-height: 210px;
+  }
+}
