@@ -41,6 +41,10 @@ export type Choice = {
 
 export type StoryDisplayMode = "title" | "chapter" | "story" | "ending";
 
+export type InteractiveSceneDefinition = {
+  kind: "work-minigame";
+};
+
 export type StoryNode = {
   id: string;
   title: string;
@@ -53,6 +57,7 @@ export type StoryNode = {
   displayMode?: StoryDisplayMode;
   showStats?: boolean;
   cinematic?: CinematicDefinition;
+  interactive?: InteractiveSceneDefinition;
   choices: Choice[];
   onEnter?: ChoiceEffect[];
   onLeave?: ChoiceEffect[];
@@ -72,6 +77,7 @@ export type StorySnapshot = {
   currentNodeId: string;
   currentNodeTitle: string;
   displayMode: StoryDisplayMode;
+  interactiveKind: InteractiveSceneDefinition["kind"] | null;
   availableChoiceIds: string[];
   flags: FlagSnapshot;
   lastEffectText: string | null;

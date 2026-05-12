@@ -93,6 +93,7 @@ export class NarrativeScene extends Phaser.Scene {
       coordinateSystem: "origin top-left, x right, y down, logical canvas 640x360",
       story: this.storyRunner.getSnapshot(),
       cinematic: this.frameSequencePlayer.getState(),
+      interactive: this.currentNode.interactive ?? null,
       visiblePlaceholder: this.currentNode.visualPlaceholder ?? null,
       visibleImage: this.currentNode.visualImage ?? null,
       visibleChoices: this.currentNode.choices.map((choice) => ({

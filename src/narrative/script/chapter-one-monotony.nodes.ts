@@ -271,9 +271,103 @@ export const chapterOneNodes: StoryNode[] = [
   {
     id: "work_minigame_intro",
     title: "Trabajo",
-    lines: ["Placeholder de la próxima escena laboral. El minijuego de trabajo todavía está pendiente."],
+    lines: ["El monitor de tubo se enciende. La jornada empieza antes de que puedas acomodarte."],
+    visualPlaceholder: "",
+    showStats: false,
+    interactive: {
+      kind: "work-minigame",
+    },
+    choices: [
+      {
+        id: "finish_work_shift_clean",
+        text: "Cerrar tareas",
+        effects: [
+          adjustAxis(STORY_VARIABLE_FLAGS.fatigueEnergy, -1),
+          adjustAxis(STORY_VARIABLE_FLAGS.anxietyCalm, 1),
+        ],
+        effectText:
+          "Terminás rápido. El trabajo te gasta energía, pero no te arrastra del todo.",
+        nextNodeId: "work_shift_clean",
+      },
+      {
+        id: "finish_work_shift_strained",
+        text: "Cerrar jornada tensa",
+        effects: [
+          adjustAxis(STORY_VARIABLE_FLAGS.fatigueEnergy, -2),
+          adjustAxis(STORY_VARIABLE_FLAGS.anxietyCalm, -1),
+        ],
+        effectText: "La pantalla queda atrás, pero el ruido del turno se queda con vos.",
+        nextNodeId: "work_shift_strained",
+      },
+      {
+        id: "finish_work_shift_failed",
+        text: "Cerrar con errores",
+        effects: [
+          adjustAxis(STORY_VARIABLE_FLAGS.fatigueEnergy, -2),
+          adjustAxis(STORY_VARIABLE_FLAGS.anxietyCalm, -2),
+        ],
+        effectText: "Entregás tarde y mal. Sentís el cuerpo cansado y la cabeza acelerada.",
+        nextNodeId: "work_shift_failed",
+      },
+    ],
+  },
+  {
+    id: "work_shift_clean",
+    title: "Trabajo entregado",
+    lines: [
+      "Los tickets se apagan uno por uno. Nadie felicita a nadie, pero por lo menos hoy no se cae nada.",
+    ],
     visualPlaceholder: workPlaceholder(
-      "Lugar de trabajo pendiente. Acá empezará el próximo sistema jugable cuando esté definido.",
+      "El escritorio queda quieto después del último comando. El reflejo del monitor todavía marca la cara.",
+    ),
+    choices: [
+      {
+        id: "continue_after_clean_shift",
+        text: "Continuar",
+        nextNodeId: "work_day_checkpoint",
+      },
+    ],
+  },
+  {
+    id: "work_shift_strained",
+    title: "Trabajo a presión",
+    lines: [
+      "Sacás parte del trabajo. El resto queda como una sombra en la pestaña del navegador.",
+    ],
+    visualPlaceholder: workPlaceholder(
+      "La terminal sigue abierta con líneas incompletas. El escritorio parece respirar más fuerte que antes.",
+    ),
+    choices: [
+      {
+        id: "continue_after_strained_shift",
+        text: "Continuar",
+        nextNodeId: "work_day_checkpoint",
+      },
+    ],
+  },
+  {
+    id: "work_shift_failed",
+    title: "Trabajo con errores",
+    lines: [
+      "Las barras llegaron a cero demasiado rápido. El jefe no aparece, pero igual sentís que está mirando.",
+    ],
+    visualPlaceholder: workPlaceholder(
+      "El monitor vuelve al escritorio con un aviso de error. Nadie habla, y eso pesa más.",
+    ),
+    choices: [
+      {
+        id: "continue_after_failed_shift",
+        text: "Continuar",
+        nextNodeId: "work_day_checkpoint",
+      },
+    ],
+  },
+  {
+    id: "work_day_checkpoint",
+    title: "Fin de jornada",
+    lines: ["El turno termina. El ruido del monitor baja, pero no desaparece del todo."],
+    visualPlaceholder: workPlaceholder(
+      "Placeholder de la próxima escena después del trabajo. El día queda listo para continuar.",
     ),
     choices: [],
   },

@@ -82,6 +82,7 @@ export class StoryRunner {
       currentNodeId: this.currentNode.id,
       currentNodeTitle: this.currentNode.title,
       displayMode: this.currentNode.displayMode ?? "story",
+      interactiveKind: this.currentNode.interactive?.kind ?? null,
       availableChoiceIds: presentedNode.choices
         .filter((choice) => choice.isAvailable)
         .map((choice) => choice.id),

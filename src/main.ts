@@ -3,6 +3,7 @@ import { createGame } from "./game/createGame";
 import { createRetroShell } from "./ui/createRetroShell";
 import { NarrativePanel } from "./ui/narrative-panel";
 import { VisualPlaceholder } from "./ui/visual-placeholder";
+import { WorkMinigameScreen } from "./ui/work-minigame";
 import type { PresentedNode } from "./narrative/types";
 
 const rootElement = document.querySelector<HTMLElement>("#app");
@@ -13,10 +14,21 @@ if (!rootElement) {
 
 const { cinematicElement, visualElement, narrativeElement } = createRetroShell(rootElement);
 const visualPlaceholder = new VisualPlaceholder(visualElement);
+const workMinigameScreen = new WorkMinigameScreen(visualElement);
 const narrativePanel = new NarrativePanel(narrativeElement);
 const game = createGame(cinematicElement);
 
 game.events.on("story:presented", (presentedNode: PresentedNode) => {
+  if (presentedNode.interactive?.kind === "work-minigame") {
+    narrativeElement.hidden = true;
+    workMinigameScreen.mount((choiceId) => {
+      window.chooseStoryChoice?.(choiceId);
+    });
+    return;
+  }
+
+  workMinigameScreen.unmount();
+  narrativeElement.hidden = false;
   visualPlaceholder.render(presentedNode);
   narrativePanel.render(presentedNode);
 
