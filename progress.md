@@ -84,6 +84,11 @@
   - title/chapter modes keep their compact centered control box overrides.
   - verified `npx tsc --noEmit` and `git diff --check`.
   - `npm run build`, Playwright screenshot capture, and the in-session browser were still blocked/cancelled by the environment (`spawn EPERM` / cancelled navigation), so final pixel verification should be done in the local browser at `http://127.0.0.1:5174/`.
+- Work minigame high-fidelity pass in progress:
+  - kept the typing/code-ticket contract but added a live ticket queue, narrative system feed, strain meter, pressure events, code-line highlighting, rhythm feedback, and a stricter clean/strained outcome split based on accumulated work noise.
+  - preserved the black/white CRT/VN language: no new color system, no rounded cards, no marketing-style ornament.
+  - verified `npx tsc --noEmit` and `git diff --check`.
+  - `npm run build`, Vite dev server startup, and Playwright screenshot capture are blocked in this sandbox by `spawn EPERM` when launching esbuild/Chromium, so final browser verification still needs a local run.
 
 ## TODO
 
