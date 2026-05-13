@@ -13,6 +13,8 @@ export type WorkMinigameSnapshot = {
   expectedText: string | null;
   typedText: string;
   timeRemainingMs: number;
+  timeBonusPerCorrectCharacterMs: number;
+  timePenaltyPerMistakeMs: number;
   inputMatchesExpectedPrefix: boolean;
   feedMessages: string[];
 };
@@ -58,7 +60,6 @@ type WorkMinigameElements = {
   strainLabel: HTMLSpanElement;
   strainFill: HTMLDivElement;
   queueList: HTMLDivElement;
-  feedList: HTMLDivElement;
   browserTitle: HTMLHeadingElement;
   browserCopy: HTMLParagraphElement;
   browserAddress: HTMLDivElement;
@@ -76,13 +77,13 @@ const WORK_TASKS: WorkTask[] = [
     ticket: "TICKET 143",
     url: "intranet.local/php/ticket-143",
     browserHeading: "saludo($nombre)",
-    browserCopy: "La intranet espera una funcion pequena para armar el saludo del turno.",
+    browserCopy: "La intranet espera una funcion corta para saludar al turno.",
     expected: `<?php
 function saludo($nombre) {
     return "Hola, " . $nombre;
 }
 ?>`,
-    timeLimitMs: 30000,
+    timeLimitMs: 36000,
     startMessage: "El primer ticket cae sin saludo. La sala no hace ruido, pero todos miran.",
     successMessage: "El saludo queda compilado. Nadie responde.",
     timeoutMessage: "El ticket de saludo queda abierto y empieza a molestar en la cola.",
@@ -93,23 +94,23 @@ function saludo($nombre) {
     ],
   },
   {
-    id: "iva",
-    title: "Calculo de impuesto",
+    id: "horas",
+    title: "Suma de horas",
     ticket: "TICKET 217",
     url: "intranet.local/php/ticket-217",
-    browserHeading: "precioConIva($precio)",
-    browserCopy: "Ventas necesita una funcion simple que devuelva el precio con IVA.",
+    browserHeading: "sumarHoras($hoy, $ayer)",
+    browserCopy: "Administracion pide sumar dos cargas de horas antes del corte.",
     expected: `<?php
-function precioConIva($precio) {
-    return $precio * 1.21;
+function sumarHoras($hoy, $ayer) {
+    return $hoy + $ayer;
 }
 ?>`,
-    timeLimitMs: 34000,
-    startMessage: "Ventas empuja el siguiente pedido. Nadie pregunta si estas listo.",
-    successMessage: "El calculo pasa. La cola baja por un segundo.",
-    timeoutMessage: "Ventas reenvia el mismo pedido con asunto en mayusculas.",
+    timeLimitMs: 38000,
+    startMessage: "Administracion empuja el siguiente pedido. Nadie pregunta si estas listo.",
+    successMessage: "La suma pasa. La cola baja por un segundo.",
+    timeoutMessage: "Administracion reenvia el mismo pedido con asunto en mayusculas.",
     pressureEvents: [
-      { triggerAtRatio: 0.7, message: "Correo interno: RE: RE: precio mal cargado.", tone: "neutral" },
+      { triggerAtRatio: 0.7, message: "Correo interno: RE: RE: horas mal cargadas.", tone: "neutral" },
       { triggerAtRatio: 0.42, message: "Una notificacion tapa medio pensamiento.", tone: "warning" },
       { triggerAtRatio: 0.2, message: "La barra se achica. Tu mano no.", tone: "error" },
     ],
@@ -119,18 +120,14 @@ function precioConIva($precio) {
     title: "Estado del ticket",
     ticket: "TICKET 302",
     url: "intranet.local/php/ticket-302",
-    browserHeading: "estadoTicket($prioridad)",
-    browserCopy: "Soporte pide clasificar tickets con prioridad mayor a 3 como urgentes.",
+    browserHeading: "ticketUrgente($prioridad)",
+    browserCopy: "Soporte pide marcar como urgente cualquier prioridad mayor a tres.",
     expected: `<?php
-function estadoTicket($prioridad) {
-    if ($prioridad > 3) {
-        return "urgente";
-    }
-
-    return "normal";
+function ticketUrgente($prioridad) {
+    return $prioridad > 3;
 }
 ?>`,
-    timeLimitMs: 48000,
+    timeLimitMs: 42000,
     startMessage: "Soporte pide distinguir urgencias. Todas parecen urgentes desde aca.",
     successMessage: "El clasificador responde. Por ahora, nada explota.",
     timeoutMessage: "Los tickets se mezclan. Normal y urgente pesan igual.",
@@ -141,27 +138,21 @@ function estadoTicket($prioridad) {
     ],
   },
   {
-    id: "horas",
-    title: "Total de horas",
+    id: "cierre",
+    title: "Cierre simple",
     ticket: "TICKET 411",
     url: "intranet.local/php/ticket-411",
-    browserHeading: "totalHoras($horas)",
-    browserCopy: "Recursos humanos manda un arreglo de horas y espera el total acumulado.",
+    browserHeading: "cerrarTicket($id)",
+    browserCopy: "El ultimo pedido solo necesita dejar una marca simple antes del almuerzo.",
     expected: `<?php
-function totalHoras($horas) {
-    $total = 0;
-
-    foreach ($horas as $hora) {
-        $total += $hora;
-    }
-
-    return $total;
+function cerrarTicket($id) {
+    return "cerrado-" . $id;
 }
 ?>`,
-    timeLimitMs: 62000,
-    startMessage: "Recursos humanos manda una lista larga. Alguien la llama simple.",
-    successMessage: "El total cierra. El monitor se queda con el brillo pegado a la cara.",
-    timeoutMessage: "La lista queda a medio sumar. El turno no termina, se acumula.",
+    timeLimitMs: 44000,
+    startMessage: "El ultimo pedido llega cuando ya pensabas en salir al corte.",
+    successMessage: "El cierre entra. El monitor se queda con el brillo pegado a la cara.",
+    timeoutMessage: "El cierre queda a medias. El turno no termina, se acumula.",
     pressureEvents: [
       { triggerAtRatio: 0.75, message: "La oficina ya aprendio a sonar como estatica.", tone: "neutral" },
       { triggerAtRatio: 0.5, message: "El cafe frio espera al lado del teclado.", tone: "warning" },
@@ -176,6 +167,12 @@ const OUTCOME_CHOICE_IDS: Record<WorkMinigameOutcome, string> = {
   failed: "finish_work_shift_failed",
 };
 
+const MINIMUM_COMPLETED_TASKS_FOR_LUNCH = 2;
+const CORRECT_CHARACTER_TIME_BONUS_MS = 180;
+const INPUT_MISTAKE_TIME_PENALTY_MS = 900;
+const MAX_BONUS_TIME_MS = 16000;
+const TIME_ADJUSTMENT_FLASH_MS = 240;
+
 export class WorkMinigameScreen {
   private elements: WorkMinigameElements | null = null;
   private taskIndex = 0;
@@ -184,6 +181,7 @@ export class WorkMinigameScreen {
   private totalStrain = 0;
   private currentTaskMistakes = 0;
   private correctKeystrokeRun = 0;
+  private furthestCorrectCharacterCount = 0;
   private currentPressureEventIndex = 0;
   private lastTypedLength = 0;
   private lastWasPrefix = true;
@@ -192,11 +190,14 @@ export class WorkMinigameScreen {
   private taskResults: WorkTaskResult[] = [];
   private readonly feedMessages: string[] = [];
   private taskDeadlineAt = 0;
+  private taskMaximumDeadlineAt = 0;
   private active = false;
   private locked = false;
   private frameRequestId: number | null = null;
   private advanceTimeoutId: number | null = null;
+  private timeAdjustmentTimeoutId: number | null = null;
   private onComplete: ((choiceId: string) => void) | null = null;
+  private completionRequested = false;
 
   constructor(private readonly parent: HTMLDivElement) {}
 
@@ -209,12 +210,14 @@ export class WorkMinigameScreen {
     this.onComplete = onComplete;
     this.active = true;
     this.locked = false;
+    this.completionRequested = false;
     this.taskIndex = 0;
     this.completedTasks = 0;
     this.failedTasks = 0;
     this.totalStrain = 0;
     this.currentTaskMistakes = 0;
     this.correctKeystrokeRun = 0;
+    this.furthestCorrectCharacterCount = 0;
     this.currentPressureEventIndex = 0;
     this.lastTypedLength = 0;
     this.lastWasPrefix = true;
@@ -236,8 +239,14 @@ export class WorkMinigameScreen {
       this.advanceTimeoutId = null;
     }
 
+    if (this.timeAdjustmentTimeoutId !== null) {
+      window.clearTimeout(this.timeAdjustmentTimeoutId);
+      this.timeAdjustmentTimeoutId = null;
+    }
+
     this.active = false;
     this.locked = false;
+    this.completionRequested = false;
     this.elements = null;
     this.onComplete = null;
     delete window.getWorkMinigameSnapshot;
@@ -294,7 +303,19 @@ export class WorkMinigameScreen {
     strainTrack.append(strainFill);
 
     pressurePanel.append(timerLabel, timerTrack, progressLabel, progressTrack, strainLabel, strainTrack);
-    header.append(taskLabel, pressurePanel);
+    const headerStatus = document.createElement("div");
+    headerStatus.className = "work-minigame__header-status";
+
+    const queuePanel = document.createElement("section");
+    queuePanel.className = "work-task-queue-strip";
+    queuePanel.setAttribute("aria-label", "Cola de tickets");
+
+    const queueList = document.createElement("div");
+    queueList.className = "work-task-queue";
+    queuePanel.append(queueList);
+
+    headerStatus.append(taskLabel, queuePanel);
+    header.append(headerStatus, pressurePanel);
 
     const desktop = document.createElement("section");
     desktop.className = "work-minigame__desktop";
@@ -325,7 +346,7 @@ export class WorkMinigameScreen {
     editor.spellcheck = false;
     editor.autocomplete = "off";
     editor.autocapitalize = "off";
-    editor.wrap = "off";
+    editor.wrap = "soft";
     editor.addEventListener("input", () => this.handleEditorInput());
     editor.addEventListener("keydown", (event) => this.handleEditorKeyDown(event));
     terminalWindow.addEventListener("click", () => editor.focus({ preventScroll: true }));
@@ -363,35 +384,7 @@ export class WorkMinigameScreen {
     browserBody.append(browserTitle, browserCopy, browserCode);
     browserWindow.append(browserChrome, browserBody);
 
-    const sidecar = document.createElement("aside");
-    sidecar.className = "work-sidecar";
-
-    const queuePanel = document.createElement("section");
-    queuePanel.className = "work-sidecar__panel work-sidecar__panel--queue";
-
-    const queueTitle = document.createElement("div");
-    queueTitle.className = "work-sidecar__title";
-    queueTitle.textContent = "cola";
-
-    const queueList = document.createElement("div");
-    queueList.className = "work-task-queue";
-    queueList.setAttribute("aria-label", "Cola de tickets");
-    queuePanel.append(queueTitle, queueList);
-
-    const feedPanel = document.createElement("section");
-    feedPanel.className = "work-sidecar__panel work-sidecar__panel--feed";
-
-    const feedTitle = document.createElement("div");
-    feedTitle.className = "work-sidecar__title";
-    feedTitle.textContent = "registro";
-
-    const feedList = document.createElement("div");
-    feedList.className = "work-feed";
-    feedList.setAttribute("aria-live", "polite");
-    feedPanel.append(feedTitle, feedList);
-
-    sidecar.append(queuePanel, feedPanel);
-    desktop.append(terminalWindow, browserWindow, sidecar);
+    desktop.append(terminalWindow, browserWindow);
     screen.append(header, desktop);
     bezel.append(screen);
     root.append(bezel);
@@ -406,7 +399,6 @@ export class WorkMinigameScreen {
       strainLabel,
       strainFill,
       queueList,
-      feedList,
       browserTitle,
       browserCopy,
       browserAddress,
@@ -425,6 +417,7 @@ export class WorkMinigameScreen {
     this.locked = false;
     this.currentTaskMistakes = 0;
     this.correctKeystrokeRun = 0;
+    this.furthestCorrectCharacterCount = 0;
     this.currentPressureEventIndex = 0;
     this.lastTypedLength = 0;
     this.lastWasPrefix = true;
@@ -432,6 +425,8 @@ export class WorkMinigameScreen {
     this.taskResults[this.taskIndex] = "active";
     elements.root.dataset.state = "typing";
     elements.root.dataset.rhythm = "searching";
+    delete elements.root.dataset.timeAdjustment;
+    elements.timerLabel.removeAttribute("data-delta");
     elements.terminalWindow.dataset.input = "valid";
     elements.taskLabel.textContent = `${task.ticket} / ${task.title}`;
     elements.browserTitle.textContent = task.browserHeading;
@@ -479,6 +474,8 @@ export class WorkMinigameScreen {
     const now = performance.now();
     const task = this.getCurrentTask();
     this.taskDeadlineAt = now + task.timeLimitMs;
+    this.taskMaximumDeadlineAt =
+      this.taskDeadlineAt + Math.min(MAX_BONUS_TIME_MS, task.expected.length * CORRECT_CHARACTER_TIME_BONUS_MS);
     this.renderTimer(task.timeLimitMs);
     this.stopTimer();
     this.frameRequestId = requestAnimationFrame(this.updateTimer);
@@ -534,7 +531,13 @@ export class WorkMinigameScreen {
     if (isPrefix) {
       this.lastMismatchIndex = -1;
       const addedCharacterCount = Math.max(0, typedText.length - this.lastTypedLength);
+      const newlyConfirmedCharacterCount = Math.max(0, typedText.length - this.furthestCorrectCharacterCount);
       this.correctKeystrokeRun = addedCharacterCount > 0 ? this.correctKeystrokeRun + addedCharacterCount : 0;
+
+      if (newlyConfirmedCharacterCount > 0) {
+        this.furthestCorrectCharacterCount = typedText.length;
+        this.adjustTaskTime(newlyConfirmedCharacterCount * CORRECT_CHARACTER_TIME_BONUS_MS);
+      }
 
       if (!this.lastWasPrefix && typedText.length > 0) {
         this.addFeedMessage("La linea vuelve a encajar. El ruido baja apenas.", "success");
@@ -548,7 +551,11 @@ export class WorkMinigameScreen {
       }
     } else {
       this.correctKeystrokeRun = 0;
-      this.registerInputMistake(task.expected, typedText);
+      const timeExpired = this.registerInputMistake(task.expected, typedText);
+
+      if (timeExpired) {
+        return;
+      }
     }
 
     elements.root.dataset.rhythm = this.correctKeystrokeRun >= 28 ? "stable" : "searching";
@@ -633,8 +640,10 @@ export class WorkMinigameScreen {
     this.stopTimer();
     elements.root.dataset.state = outcome;
     elements.root.dataset.pressure = "steady";
-    elements.taskLabel.textContent = "TURNO CERRADO";
+    delete elements.root.dataset.timeAdjustment;
+    elements.taskLabel.textContent = "CIERRE DE TURNO";
     elements.timerLabel.textContent = `OK ${this.completedTasks}/${WORK_TASKS.length}`;
+    elements.timerLabel.removeAttribute("data-delta");
     elements.progressLabel.textContent = `ERRORES ${this.failedTasks}`;
     elements.timerFill.style.transform = "scaleX(0)";
     elements.progressFill.style.transform = `scaleX(${this.completedTasks / WORK_TASKS.length})`;
@@ -643,30 +652,70 @@ export class WorkMinigameScreen {
     elements.terminalStatus.textContent = this.getOutcomeLabel(outcome);
     this.addFeedMessage(this.getOutcomeFeedMessage(outcome), outcome === "clean" ? "success" : outcome === "failed" ? "error" : "warning");
 
-    const result = document.createElement("div");
-    result.className = "work-minigame__result";
-    result.dataset.outcome = outcome;
+    this.renderOutcomePanel(outcome, choiceId);
 
-    const title = document.createElement("strong");
-    title.textContent = this.getOutcomeLabel(outcome);
-
-    const details = document.createElement("span");
-    details.textContent = `${this.completedTasks} tareas compiladas, ${this.failedTasks} vencidas, ruido ${this.totalStrain}.`;
-    result.append(title, details);
-    elements.root.append(result);
+    if (outcome === "clean") {
+      return;
+    }
 
     this.advanceTimeoutId = window.setTimeout(() => {
       this.advanceTimeoutId = null;
-      this.onComplete?.(choiceId);
-    }, 1200);
+      this.completeMinigame(choiceId);
+    }, 900);
+  }
+
+  private renderOutcomePanel(outcome: WorkMinigameOutcome, choiceId: string): void {
+    const elements = this.requireElements();
+    const title = document.createElement("strong");
+    title.className = "work-minigame__outcome-title";
+    title.textContent = this.getOutcomeLabel(outcome);
+
+    const detail = document.createElement("span");
+    detail.className = "work-minigame__outcome-detail";
+    detail.textContent = `${this.completedTasks}/${WORK_TASKS.length} tickets, ${this.failedTasks} vencidos, ruido ${this.totalStrain}.`;
+
+    const panel = document.createElement("div");
+    panel.className = "work-minigame__outcome";
+    panel.dataset.outcome = outcome;
+    panel.append(title, detail);
+
+    elements.browserAddress.textContent = outcome === "clean" ? "git.local/turno/commit-final" : "intranet.local/turno/resumen";
+    elements.browserTitle.textContent = outcome === "clean" ? "Commit listo" : "Resumen del turno";
+    elements.browserCopy.textContent = this.getOutcomeBrowserCopy(outcome);
+    elements.editor.value = this.getOutcomeTerminalText(outcome);
+    elements.editor.disabled = true;
+
+    if (outcome === "clean") {
+      const button = document.createElement("button");
+      button.className = "work-minigame__commit-button";
+      button.type = "button";
+      button.textContent = "CERRAR COMMIT";
+      button.addEventListener("click", () => this.completeMinigame(choiceId));
+
+      panel.append(button);
+      elements.browserCode.replaceChildren(panel);
+      requestAnimationFrame(() => button.focus({ preventScroll: true }));
+      return;
+    }
+
+    elements.browserCode.replaceChildren(panel);
+  }
+
+  private completeMinigame(choiceId: string): void {
+    if (this.completionRequested) {
+      return;
+    }
+
+    this.completionRequested = true;
+    this.onComplete?.(choiceId);
   }
 
   private getOutcome(): WorkMinigameOutcome {
-    if (this.completedTasks === WORK_TASKS.length && this.failedTasks === 0 && this.totalStrain <= 3) {
+    if (this.completedTasks === WORK_TASKS.length) {
       return "clean";
     }
 
-    if (this.completedTasks >= Math.ceil(WORK_TASKS.length / 2)) {
+    if (this.completedTasks >= MINIMUM_COMPLETED_TASKS_FOR_LUNCH) {
       return "strained";
     }
 
@@ -676,11 +725,11 @@ export class WorkMinigameScreen {
   private getOutcomeLabel(outcome: WorkMinigameOutcome): string {
     switch (outcome) {
       case "clean":
-        return "ENTREGA LIMPIA";
+        return "COMMIT LISTO";
       case "strained":
-        return "ENTREGA TENSIONADA";
+        return "CORTE HABILITADO";
       case "failed":
-        return "ENTREGA FALLIDA";
+        return "HORAS EXTRA";
       default:
         return this.assertNever(outcome);
     }
@@ -689,11 +738,47 @@ export class WorkMinigameScreen {
   private getOutcomeFeedMessage(outcome: WorkMinigameOutcome): string {
     switch (outcome) {
       case "clean":
-        return "La cola queda vacia. Por unos segundos, la oficina no pide nada.";
+        return "Los cuatro tickets cierran. Falta confirmar el commit final.";
       case "strained":
-        return "La jornada cierra con ruido. El trabajo sale, pero se queda encima.";
+        return "Completaste lo minimo. Te dejan salir al corte de almuerzo.";
       case "failed":
-        return "La cola te pasa por arriba. El cierre ocurre sin terminar de cerrar.";
+        return "Te quedas corrigiendo errores. El corte de almuerzo se pierde.";
+      default:
+        return this.assertNever(outcome);
+    }
+  }
+
+  private getOutcomeBrowserCopy(outcome: WorkMinigameOutcome): string {
+    switch (outcome) {
+      case "clean":
+        return "La cola quedo vacia. El commit final espera una confirmacion antes del corte.";
+      case "strained":
+        return "La cola baja lo suficiente. El corte queda habilitado.";
+      case "failed":
+        return "La cola no cierra. Quedan correcciones fuera de hora.";
+      default:
+        return this.assertNever(outcome);
+    }
+  }
+
+  private getOutcomeTerminalText(outcome: WorkMinigameOutcome): string {
+    switch (outcome) {
+      case "clean":
+        return [
+          "> tests internos: pasan",
+          "> tickets: 4 cerrados",
+          "> commit: pendiente de cierre",
+        ].join("\n");
+      case "strained":
+        return [
+          "> tickets minimos: cerrados",
+          "> corte: habilitado",
+        ].join("\n");
+      case "failed":
+        return [
+          "> tickets pendientes",
+          "> correcciones: fuera de hora",
+        ].join("\n");
       default:
         return this.assertNever(outcome);
     }
@@ -725,7 +810,8 @@ export class WorkMinigameScreen {
 
       const text = document.createElement("span");
       text.className = "work-task-queue__text";
-      text.textContent = `${task.ticket} ${task.title}`;
+      text.textContent = task.ticket.replace("TICKET ", "#");
+      row.title = `${task.ticket}: ${task.title}`;
 
       row.append(marker, text);
       return row;
@@ -750,7 +836,6 @@ export class WorkMinigameScreen {
   }
 
   private addFeedMessage(message: string, tone: WorkLogTone): void {
-    const elements = this.requireElements();
     const normalizedMessage = message.trim();
 
     if (!normalizedMessage) {
@@ -758,30 +843,12 @@ export class WorkMinigameScreen {
     }
 
     this.logEntryId += 1;
-    const feedMessage = `${String(this.logEntryId).padStart(2, "0")} ${normalizedMessage}`;
+    const tonePrefix = tone === "neutral" ? "" : `${tone.toUpperCase()} `;
+    const feedMessage = `${String(this.logEntryId).padStart(2, "0")} ${tonePrefix}${normalizedMessage}`;
     this.feedMessages.push(feedMessage);
 
     while (this.feedMessages.length > 7) {
       this.feedMessages.shift();
-    }
-
-    const entry = document.createElement("div");
-    entry.className = "work-feed__entry";
-    entry.dataset.tone = tone;
-
-    const stamp = document.createElement("span");
-    stamp.className = "work-feed__stamp";
-    stamp.textContent = String(this.logEntryId).padStart(2, "0");
-
-    const body = document.createElement("span");
-    body.className = "work-feed__body";
-    body.textContent = normalizedMessage;
-
-    entry.append(stamp, body);
-    elements.feedList.append(entry);
-
-    while (elements.feedList.childElementCount > 7) {
-      elements.feedList.firstElementChild?.remove();
     }
   }
 
@@ -802,20 +869,79 @@ export class WorkMinigameScreen {
     }
   }
 
-  private registerInputMistake(expectedText: string, typedText: string): void {
+  private adjustTaskTime(amountMs: number): void {
+    if (this.locked || !this.active) {
+      return;
+    }
+
+    const elements = this.requireElements();
+    const now = performance.now();
+    const nextDeadline =
+      amountMs > 0
+        ? Math.min(this.taskMaximumDeadlineAt, this.taskDeadlineAt + amountMs)
+        : Math.max(now, this.taskDeadlineAt + amountMs);
+
+    this.taskDeadlineAt = nextDeadline;
+    this.renderTimer(this.getCurrentTimeRemainingMs());
+    this.flashTimeAdjustment(amountMs);
+    elements.terminalStatus.textContent =
+      amountMs > 0 ? this.getTerminalSyncLabel(this.getTaskProgressRatio()) : "TIEMPO RESTADO";
+  }
+
+  private flashTimeAdjustment(amountMs: number): void {
+    const elements = this.requireElements();
+    const direction = amountMs > 0 ? "gain" : "loss";
+    const deltaLabel = `${amountMs > 0 ? "+" : "-"}${(Math.abs(amountMs) / 1000).toFixed(1)}s`;
+
+    delete elements.root.dataset.timeAdjustment;
+    elements.timerLabel.setAttribute("data-delta", deltaLabel);
+
+    requestAnimationFrame(() => {
+      if (!this.elements || this.locked) {
+        return;
+      }
+
+      elements.root.dataset.timeAdjustment = direction;
+    });
+
+    if (this.timeAdjustmentTimeoutId !== null) {
+      window.clearTimeout(this.timeAdjustmentTimeoutId);
+    }
+
+    this.timeAdjustmentTimeoutId = window.setTimeout(() => {
+      this.timeAdjustmentTimeoutId = null;
+
+      if (!this.elements) {
+        return;
+      }
+
+      delete elements.root.dataset.timeAdjustment;
+      elements.timerLabel.removeAttribute("data-delta");
+    }, TIME_ADJUSTMENT_FLASH_MS);
+  }
+
+  private registerInputMistake(expectedText: string, typedText: string): boolean {
     const mismatchIndex = this.getFirstMismatchIndex(expectedText, typedText);
 
     if (mismatchIndex === this.lastMismatchIndex) {
-      return;
+      return false;
     }
 
     this.lastMismatchIndex = mismatchIndex;
     this.currentTaskMistakes += 1;
     this.increaseStrain(1);
+    this.adjustTaskTime(-INPUT_MISTAKE_TIME_PENALTY_MS);
 
     if (this.currentTaskMistakes <= 3 || this.currentTaskMistakes % 3 === 0) {
       this.addFeedMessage(`Desfase en columna ${mismatchIndex + 1}. El monitor devuelve ruido.`, "error");
     }
+
+    if (this.getCurrentTimeRemainingMs() <= 0) {
+      this.finishTask(false);
+      return true;
+    }
+
+    return false;
   }
 
   private increaseStrain(amount: number): void {
@@ -886,6 +1012,8 @@ export class WorkMinigameScreen {
       expectedText: task?.expected ?? null,
       typedText,
       timeRemainingMs,
+      timeBonusPerCorrectCharacterMs: CORRECT_CHARACTER_TIME_BONUS_MS,
+      timePenaltyPerMistakeMs: INPUT_MISTAKE_TIME_PENALTY_MS,
       inputMatchesExpectedPrefix: task ? task.expected.startsWith(typedText) : true,
       feedMessages: [...this.feedMessages],
     };
@@ -903,6 +1031,15 @@ export class WorkMinigameScreen {
 
   private getTypedText(): string {
     return this.requireElements().editor.value.replace(/\r\n/g, "\n");
+  }
+
+  private getTaskProgressRatio(): number {
+    const task = this.getCurrentTask();
+    return Math.min(1, this.getTypedText().length / task.expected.length);
+  }
+
+  private getCurrentTimeRemainingMs(): number {
+    return Math.max(0, this.taskDeadlineAt - performance.now());
   }
 
   private getFirstMismatchIndex(expected: string, typed: string): number {

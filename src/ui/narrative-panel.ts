@@ -16,20 +16,25 @@ const VISIBLE_STAT_DEFINITIONS = [
   {
     flag: "cansancio_energia",
     label: "Energía",
-    lowLabel: "Cansancio",
-    highLabel: "Energía",
   },
   {
     flag: "ansiedad_tranquilidad",
     label: "Tranquilidad",
-    lowLabel: "Ansiedad",
-    highLabel: "Tranquilidad",
+  },
+  {
+    flag: "confianza",
+    label: "Confianza",
+  },
+  {
+    flag: "reputacion",
+    label: "Reputación",
   },
 ] as const;
 
 export class NarrativePanel {
   private readonly rootElement: HTMLElement;
   private readonly slotElement: HTMLDivElement;
+  private readonly copyElement: HTMLDivElement;
   private readonly titleElement: HTMLHeadingElement;
   private readonly bodyElement: HTMLDivElement;
   private readonly questionElement: HTMLParagraphElement;
@@ -56,8 +61,8 @@ export class NarrativePanel {
     this.panelElement.className = "narrative-panel";
     this.panelElement.setAttribute("aria-live", "polite");
 
-    const copyElement = document.createElement("div");
-    copyElement.className = "narrative-panel__copy";
+    this.copyElement = document.createElement("div");
+    this.copyElement.className = "narrative-panel__copy";
 
     this.titleElement = document.createElement("h1");
     this.titleElement.className = "narrative-panel__title";
@@ -79,12 +84,12 @@ export class NarrativePanel {
     this.choicesElement = document.createElement("div");
     this.choicesElement.className = "narrative-panel__choices";
 
-    copyElement.append(
+    this.copyElement.append(
       this.titleElement,
       this.bodyElement,
       this.questionElement,
     );
-    this.panelElement.append(copyElement, this.choicesElement);
+    this.panelElement.append(this.copyElement, this.choicesElement);
     this.slotElement.replaceChildren(this.panelElement);
     this.rootElement.replaceChildren(this.statsElement, this.notificationElement, this.slotElement);
     document.addEventListener("keydown", (event) => this.handleKeyDown(event));
@@ -150,6 +155,7 @@ export class NarrativePanel {
 
     this.availableChoices = availableChoices;
     this.selectedChoiceIndex = 0;
+    this.applyTextDensity(presentedNode, availableChoices);
     const choiceTypeSegments = this.renderChoices(presentedNode, useTypewriter);
     this.renderStats(presentedNode);
     this.renderStatNotification(presentedNode);
@@ -157,6 +163,7 @@ export class NarrativePanel {
     this.rootElement.hidden = displayMode === "chapter";
 
     if (!useTypewriter) {
+      this.fitPanelText();
       return;
     }
 
@@ -190,8 +197,64 @@ export class NarrativePanel {
         this.narrativeTypewriterTimeline = null;
         this.narrativeTypingActive = false;
         this.applyChoiceAvailabilityToButtons(presentedNode);
+        this.fitPanelText();
       },
     });
+  }
+
+  private applyTextDensity(
+    presentedNode: RenderablePresentedNode,
+    availableChoices: PresentedNode["choices"],
+  ): void {
+    const totalTextLength =
+      presentedNode.title.length +
+      presentedNode.lines.reduce((total, line) => total + line.length, 0) +
+      (presentedNode.question?.length ?? 0) +
+      availableChoices.reduce((total, choice) => total + choice.text.length, 0);
+    const textLineCount =
+      1 + presentedNode.lines.length + (presentedNode.question ? 1 : 0) + availableChoices.length;
+    const density =
+      totalTextLength > 280 || textLineCount >= 7
+        ? "tight"
+        : totalTextLength > 190 || textLineCount >= 5
+          ? "compact"
+          : "normal";
+
+    this.panelElement.dataset.density = density;
+    this.panelElement.dataset.overflow = "false";
+  }
+
+  private fitPanelText(): void {
+    requestAnimationFrame(() => {
+      this.panelElement.dataset.overflow = "false";
+
+      if (!this.panelContentOverflows()) {
+        return;
+      }
+
+      if (this.panelElement.dataset.density === "normal") {
+        this.panelElement.dataset.density = "compact";
+      } else if (this.panelElement.dataset.density === "compact") {
+        this.panelElement.dataset.density = "tight";
+      }
+
+      requestAnimationFrame(() => {
+        if (this.panelContentOverflows() && this.panelElement.dataset.density === "compact") {
+          this.panelElement.dataset.density = "tight";
+        }
+
+        requestAnimationFrame(() => {
+          this.panelElement.dataset.overflow = this.panelContentOverflows() ? "scroll" : "false";
+        });
+      });
+    });
+  }
+
+  private panelContentOverflows(): boolean {
+    const panelOverflow = this.panelElement.scrollHeight > this.panelElement.clientHeight + 1;
+    const copyOverflow = this.copyElement.scrollHeight > this.copyElement.clientHeight + 1;
+    const choicesOverflow = this.choicesElement.scrollHeight > this.choicesElement.clientHeight + 1;
+    return panelOverflow || copyOverflow || choicesOverflow;
   }
 
   private stopNarrativeTypewriter(): void {
@@ -273,38 +336,22 @@ export class NarrativePanel {
 
       const statLabel = document.createElement("span");
       statLabel.className = "narrative-panel__stat-label";
-      statLabel.textContent = `${statDefinition.lowLabel} / ${statDefinition.highLabel}`;
-
-      const statValue = document.createElement("span");
-      statValue.className = "narrative-panel__stat-value";
-      statValue.textContent = `${clampedValue}/${STAT_MAXIMUM}`;
+      statLabel.textContent = statDefinition.label;
 
       const statTrack = document.createElement("div");
       statTrack.className = "narrative-panel__stat-track";
       statTrack.setAttribute(
         "aria-label",
-        `${statDefinition.lowLabel} ${STAT_MINIMUM}, neutral ${STAT_NEUTRAL}, ${statDefinition.highLabel} ${STAT_MAXIMUM}. Valor actual ${clampedValue}.`,
+        `${statDefinition.label}: ${this.getStatStateLabel(clampedValue)}.`,
       );
 
       const statFill = document.createElement("div");
       statFill.className = "narrative-panel__stat-fill";
       statFill.style.width = `${this.getStatFillPercentage(clampedValue)}%`;
 
-      const statRange = document.createElement("div");
-      statRange.className = "narrative-panel__stat-range";
-
-      const statLowLabel = document.createElement("span");
-      statLowLabel.className = "narrative-panel__stat-low";
-      statLowLabel.textContent = statDefinition.lowLabel;
-
-      const statHighLabel = document.createElement("span");
-      statHighLabel.className = "narrative-panel__stat-high";
-      statHighLabel.textContent = statDefinition.highLabel;
-
-      statHeader.append(statLabel, statValue);
+      statHeader.append(statLabel);
       statTrack.append(statFill);
-      statRange.append(statLowLabel, statHighLabel);
-      statElement.append(statHeader, statTrack, statRange);
+      statElement.append(statHeader, statTrack);
       return [statElement];
     });
 
@@ -315,11 +362,7 @@ export class NarrativePanel {
     const statsTitle = document.createElement("span");
     statsTitle.textContent = "ESTADO";
 
-    const statsScale = document.createElement("span");
-    statsScale.className = "narrative-panel__stats-scale";
-    statsScale.textContent = `${STAT_MINIMUM}-${STAT_MAXIMUM}`;
-
-    statsHeading.append(statsTitle, statsScale);
+    statsHeading.append(statsTitle);
     this.statsElement.replaceChildren(statsHeading, ...statElements);
   }
 
@@ -519,6 +562,18 @@ export class NarrativePanel {
     }
 
     return "neutral";
+  }
+
+  private getStatStateLabel(value: number): "baja" | "estable" | "alta" {
+    if (value < STAT_NEUTRAL) {
+      return "baja";
+    }
+
+    if (value > STAT_NEUTRAL) {
+      return "alta";
+    }
+
+    return "estable";
   }
 
   private getClampedStatValue(value: number): number {

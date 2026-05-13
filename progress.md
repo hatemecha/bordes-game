@@ -89,6 +89,32 @@
   - preserved the black/white CRT/VN language: no new color system, no rounded cards, no marketing-style ornament.
   - verified `npx tsc --noEmit` and `git diff --check`.
   - `npm run build`, Vite dev server startup, and Playwright screenshot capture are blocked in this sandbox by `spawn EPERM` when launching esbuild/Chromium, so final browser verification still needs a local run.
+- Work minigame tuning follow-up:
+  - removed internal scrollbars from the work code/reference surfaces by wrapping code and shortening the first-minigame tickets.
+  - made the first work minigame more forgiving: each newly correct character adds time, each new mismatch subtracts a smaller fixed amount, and the four tickets have generous base timers.
+  - changed result thresholds: 4/4 tickets triggers boss congratulations plus `confianza +2` and `reputacion +2`; 2-3/4 reaches the lunch break with `confianza +1`; 0-1/4 keeps the player correcting errors, skips lunch, and applies `cansancio_energia -1`.
+  - added the lunch-break story node after successful/sufficient work and made confidence/reputation visible in the stats panel.
+  - verified `npx tsc --noEmit`, `git diff --check`, and a static `nextNodeId` integrity check.
+  - `npm run build` and Vite dev server startup remain blocked by sandbox `spawn EPERM` while launching esbuild, so browser/playthrough verification still needs a local run.
+- Work minigame layout/noise follow-up:
+  - removed the visible `registro` panel from the work minigame while preserving its messages in the debug snapshot.
+  - moved the ticket queue into a compact header strip using short ticket ids so the terminal and code reference get the full two-column gameplay space.
+  - removed the pressure-critical screen scale/translate animation that made the monitor feel elastic.
+  - added literal CRT noise as an animated overlay whose intensity rises with `RUIDO`, with reduced-motion support.
+  - verified `npx tsc --noEmit`, `git diff --check`, and static searches confirming no visible feed/sidecar selectors remain.
+  - `npm run build` still fails at Vite/esbuild config loading with sandbox `spawn EPERM`; no server was listening on `127.0.0.1:5174`, so browser/playthrough verification still needs a local run.
+- Stats HUD wording follow-up:
+  - changed the persistent stats panel to show only the positive stat names (`Energía`, `Tranquilidad`, `Confianza`, `Reputación`) even when their internal values are low.
+  - removed visible `1-10` scale text, per-stat numeric values, opposed low labels, and the neutral center marker from stat bars.
+  - verified `npx tsc --noEmit`, `git diff --check`, and static UI searches for removed visible stat scale/axis classes and text.
+  - `npm run build` still fails at Vite/esbuild config loading with sandbox `spawn EPERM`, after TypeScript completes successfully.
+- Work minigame close-commit/text-fit follow-up:
+  - removed the final result overlay from the work minigame; a perfect 4/4 now leaves the player in the monitor with a `CERRAR COMMIT` action before advancing.
+  - changed the clean success story beat into a later boss message (`"Buen trabajo."`) after the commit is closed, preserving the +2 confidence/+2 reputation outcome.
+  - added defensive narrative text density/overflow handling so long story panels compact themselves and avoid clipping on small screens.
+  - allowed text placeholders to remain accessible instead of hard-clipping, while preserving image/minigame overflow rules.
+  - verified `npx tsc --noEmit`, `git diff --check`, static search for removed result-overlay/boss-modal wording, and a local static `nextNodeId` target check.
+  - `npm run build` still fails at Vite/esbuild config loading with sandbox `spawn EPERM`; no server was listening on `127.0.0.1:5174`, so browser/playthrough verification still needs a local run.
 
 ## TODO
 

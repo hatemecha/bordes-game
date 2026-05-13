@@ -5,11 +5,15 @@ const INITIAL_AXIS_VALUE = 5;
 const STORY_VARIABLE_FLAGS = {
   fatigueEnergy: "cansancio_energia",
   anxietyCalm: "ansiedad_tranquilidad",
+  confidence: "confianza",
+  reputation: "reputacion",
 } as const;
 
 export const chapterOneInitialFlags: FlagSnapshot = {
   [STORY_VARIABLE_FLAGS.fatigueEnergy]: INITIAL_AXIS_VALUE,
   [STORY_VARIABLE_FLAGS.anxietyCalm]: INITIAL_AXIS_VALUE,
+  [STORY_VARIABLE_FLAGS.confidence]: INITIAL_AXIS_VALUE,
+  [STORY_VARIABLE_FLAGS.reputation]: INITIAL_AXIS_VALUE,
 };
 
 const resetInitialAxes = (): ChoiceEffect[] => [
@@ -21,6 +25,16 @@ const resetInitialAxes = (): ChoiceEffect[] => [
   {
     type: "setFlag",
     flag: STORY_VARIABLE_FLAGS.anxietyCalm,
+    value: INITIAL_AXIS_VALUE,
+  },
+  {
+    type: "setFlag",
+    flag: STORY_VARIABLE_FLAGS.confidence,
+    value: INITIAL_AXIS_VALUE,
+  },
+  {
+    type: "setFlag",
+    flag: STORY_VARIABLE_FLAGS.reputation,
     value: INITIAL_AXIS_VALUE,
   },
 ];
@@ -280,84 +294,98 @@ export const chapterOneNodes: StoryNode[] = [
     choices: [
       {
         id: "finish_work_shift_clean",
-        text: "Cerrar tareas",
+        text: "Cerrar commit",
         effects: [
-          adjustAxis(STORY_VARIABLE_FLAGS.fatigueEnergy, -1),
-          adjustAxis(STORY_VARIABLE_FLAGS.anxietyCalm, 1),
+          adjustAxis(STORY_VARIABLE_FLAGS.confidence, 2),
+          adjustAxis(STORY_VARIABLE_FLAGS.reputation, 2),
         ],
-        effectText:
-          "Terminás rápido. El trabajo te gasta energía, pero no te arrastra del todo.",
+        effectText: "Cerrás el commit final. El mensaje del jefe te deja mejor parado.",
         nextNodeId: "work_shift_clean",
       },
       {
         id: "finish_work_shift_strained",
-        text: "Cerrar jornada tensa",
-        effects: [
-          adjustAxis(STORY_VARIABLE_FLAGS.fatigueEnergy, -2),
-          adjustAxis(STORY_VARIABLE_FLAGS.anxietyCalm, -1),
-        ],
-        effectText: "La pantalla queda atrás, pero el ruido del turno se queda con vos.",
+        text: "Llegar al corte",
+        effects: [adjustAxis(STORY_VARIABLE_FLAGS.confidence, 1)],
+        effectText: "Sacás al menos dos tickets. Llegás al corte de almuerzo con más confianza.",
         nextNodeId: "work_shift_strained",
       },
       {
         id: "finish_work_shift_failed",
-        text: "Cerrar con errores",
-        effects: [
-          adjustAxis(STORY_VARIABLE_FLAGS.fatigueEnergy, -2),
-          adjustAxis(STORY_VARIABLE_FLAGS.anxietyCalm, -2),
-        ],
-        effectText: "Entregás tarde y mal. Sentís el cuerpo cansado y la cabeza acelerada.",
+        text: "Quedarse corrigiendo",
+        effects: [adjustAxis(STORY_VARIABLE_FLAGS.fatigueEnergy, -1)],
+        effectText: "Te quedás corrigiendo errores y perdés el almuerzo. La energía baja.",
         nextNodeId: "work_shift_failed",
       },
     ],
   },
   {
     id: "work_shift_clean",
-    title: "Trabajo entregado",
+    title: "Mensaje del jefe",
     lines: [
-      "Los tickets se apagan uno por uno. Nadie felicita a nadie, pero por lo menos hoy no se cae nada.",
+      "El commit queda cerrado.",
+      "Un mensaje del jefe aparece en la esquina: \"Buen trabajo.\"",
     ],
     visualPlaceholder: workPlaceholder(
-      "El escritorio queda quieto después del último comando. El reflejo del monitor todavía marca la cara.",
+      "Monitor con chat interno. JEFE: Buen trabajo. La cola queda vacía antes del corte.",
     ),
     choices: [
       {
         id: "continue_after_clean_shift",
-        text: "Continuar",
-        nextNodeId: "work_day_checkpoint",
+        text: "Ir al corte",
+        nextNodeId: "lunch_break_buy",
       },
     ],
   },
   {
     id: "work_shift_strained",
-    title: "Trabajo a presión",
+    title: "Trabajo suficiente",
     lines: [
-      "Sacás parte del trabajo. El resto queda como una sombra en la pestaña del navegador.",
+      "Sacás lo mínimo para que la cola deje de parpadear. No fue perfecto, pero alcanza.",
+      "Cuando el reloj marca el corte, todavía podés salir a comprar algo para almorzar.",
     ],
     visualPlaceholder: workPlaceholder(
-      "La terminal sigue abierta con líneas incompletas. El escritorio parece respirar más fuerte que antes.",
+      "La terminal queda con pestañas abiertas. El escritorio parece respirar más fuerte, pero la puerta del corte sigue ahí.",
     ),
     choices: [
       {
         id: "continue_after_strained_shift",
+        text: "Comprar almuerzo",
+        nextNodeId: "lunch_break_buy",
+      },
+    ],
+  },
+  {
+    id: "work_shift_failed",
+    title: "Correcciones fuera de hora",
+    lines: [
+      "Las barras llegaron a cero demasiado rápido. El jefe no aparece, pero igual sentís que está mirando.",
+      "Te quedás corrigiendo lo que quedó roto. Para cuando levantás la vista, el almuerzo ya pasó.",
+    ],
+    visualPlaceholder: workPlaceholder(
+      "El monitor vuelve al escritorio con un aviso de error. La oficina queda medio vacía y el estómago se acuerda tarde.",
+    ),
+    choices: [
+      {
+        id: "continue_after_failed_shift",
         text: "Continuar",
         nextNodeId: "work_day_checkpoint",
       },
     ],
   },
   {
-    id: "work_shift_failed",
-    title: "Trabajo con errores",
+    id: "lunch_break_buy",
+    title: "Corte de almuerzo",
     lines: [
-      "Las barras llegaron a cero demasiado rápido. El jefe no aparece, pero igual sentís que está mirando.",
+      "Salís de la oficina con el zumbido del monitor todavía pegado al oído.",
+      "En la calle, la fila del local avanza lento. Comprar algo para almorzar se siente como una decisión pequeña, pero tuya.",
     ],
     visualPlaceholder: workPlaceholder(
-      "El monitor vuelve al escritorio con un aviso de error. Nadie habla, y eso pesa más.",
+      "La luz de mediodía entra por la vereda. Un mostrador barato, tickets de papel y olor a comida caliente.",
     ),
     choices: [
       {
-        id: "continue_after_failed_shift",
-        text: "Continuar",
+        id: "continue_after_lunch_break",
+        text: "Comprar algo simple",
         nextNodeId: "work_day_checkpoint",
       },
     ],
